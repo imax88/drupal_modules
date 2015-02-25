@@ -1,0 +1,4 @@
+name = add_node
+description =  Add 1000 nodes use Batch API
+package = Ihor Maksymiv
+core = 7.x 

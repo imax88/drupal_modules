@@ -1,0 +1,6 @@
+name = Contact Field
+description = "Creates a custom field for inputting and displaying contacts  Name, Last Name ,Father Name"
+package = Ihor Maksymiv
+core = 7.x
+files[] = contact_field.module
+php = 5.2

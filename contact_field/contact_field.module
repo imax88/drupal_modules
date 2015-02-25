@@ -1,0 +1,198 @@
+<?php
+/**
+* @file
+* An example field using the Field API.
+*
+*/
+/**
+* Implements hook_field_info().
+*
+* Provides the description of the field
+* Базовые настройки нашего поля, виджет по умолчанию (форма ввода контакта) и форматирование (отображение посетителю)
+*/
+function contact_field_field_info() {
+    return array(
+        'Contact Field' => array(
+            'label' => t('Contacts'),
+            'description' => t('Contact Description'),
+            'default_widget' => 'contact_input',
+            'default_formatter' => 'contact_text',
+        ),
+    );
+}
+
+/**
+* Implements hook_field_schema().
+*/
+function contact_field_field_schema($field){
+    $columns = array(
+        'contact' => array(
+            'type' => 'varchar',
+            'length' => 255,
+            'not null' => FALSE,
+        ),
+        'type' => array(
+            'type' => 'varchar',
+            'length' => 100,
+            'not null' => FALSE,
+        )
+    );
+    $indexes = array(
+        'contact' => array('contact'),
+    );
+    return array(
+        'columns' => $columns,
+        'indexes' => $indexes,
+    );
+}
+
+/**
+* Implements hook_field_validate().
+*/
+function contact_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors){
+    foreach($items as $delta => $item){
+        // validate dependence from field type
+        switch($item['type']){
+            case 'name':
+                if (!valid_name($item['contact'])){
+                    $errors[$field['field_name']][$langcode][$delta][] = array(
+                        'error' => 'contact_invalid',
+                        'message' => t('Invalid Name '),
+                    );
+                }
+                break;
+            case 'Last_name':
+                if (!valid_Last_name($item['contact'])){
+                    $errors[$field['field_name']][$langcode][$delta][] = array(
+                        'error' => 'contact_invalid',
+                        'message' => t('Invalid  Last_name'),
+                    );
+                }
+                break;
+            case 'Father_name':
+               if (!valid_Father_name($item['contact'])){
+                    $errors[$field['field_name']][$langcode][$delta][] = array(
+                        'error' => 'contact_invalid',
+                        'message' => t('Invalid Father_name'),
+                    );
+                }
+                break;
+        }
+    }
+}
+/*
+* Implements hook_field_is_empty().
+*/
+function contact_field_field_is_empty($item, $field) {
+    return empty($item['contact']);
+}
+/**
+* Implements hook_field_formatter_info().
+*
+* Contact vatiants view
+*/
+function contact_field_field_formatter_info(){
+    return array(
+        // views simple text
+        'contact_text' => array(
+            'label' => t('Contact simple text'),
+            'field types' => array('Contact Field'),
+        ),
+    );
+}
+/**
+* Implements hook_field_formatter_view().
+*/
+function contact_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+    $element = array();
+    switch (
+$display['type']){
+        // views contacts like a text
+        case 'contact_text':
+            drupal_add_css(drupal_get_path('module', 'contact_field') . '/css/contact-field.css');
+            foreach ($items as $delta => $item) {
+                $contact = strip_tags($item['contact']);
+                switch($item['type']){
+                    case 'Name':
+                        $element[$delta]['#markup'] =
+                            '<p class="contact-field-Name">' . $contact . '</p>';
+                        break;
+                    case 'Last_name':
+                        $element[$delta]['#markup'] =
+                            '<p class="contact-field-Last_Name">' . $contact . '</p>';
+                        break;
+                    case 'Father_name':
+                        $element[$delta]['#markup'] =
+                            '<p class="contact-field-Father_Name">' . $contact . '</p>';
+                        break;
+                }
+            }
+            break;
+        
+    }
+    return $element;
+}
+/**
+* Implements hook_field_widget_info().
+* Input contact form.
+* in rhis case only one format text field with select type
+*/
+function contact_field_field_widget_info(){
+    return array(
+        'contact_input' => array(
+            'label' => t('Contact Input'),
+            'field types' => array('Contact Field'),
+        ),
+    );
+}
+/**
+* Implements hook_field_widget_form().
+*/
+function contact_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+    // default value for contact
+    $contact_value = isset($items[$delta]['contact']) ? $items[$delta]['contact'] : '';
+   
+// default value for contact type
+    $type_value = isset($items[$delta]['type']) ? $items[$delta]['type'] : 'name';
+   
+$element += array(
+        '#delta' => $delta,
+    );
+    $element['contact'] = array();
+    $element['type'] = array();
+    switch (
+$instance['widget']['type']){
+        case 'contact_input':
+            // текстовое поля для контакта
+            $element['contact'] += array(
+                '#title' => t('Your Data'),
+                '#type' => 'textfield',
+                '#default_value' => $contact_value,
+                '#size' => 100,
+                '#maxlength' => 255,
+            );
+            // select type
+            $element['type'] += array(
+                '#title' => t('Type'),
+                '#type' => 'select',
+                '#default_value' => $type_value,
+                '#options' => array(
+                    'Name' => t('Name'),
+                    'Last_name' => t('Last Name'),
+                    'Father_name' => t('Father Name'),
+                ),
+            );
+            break;
+    }
+    return $element;
+}
+/**
+* Implements hook_field_error().
+*/
+function contact_field_field_widget_error($element, $error, $form, &$form_state) {
+    switch ($error['error']) {
+        case 'contact_invalid':
+            form_error($element, $error['message']);
+            break;
+    }
+}

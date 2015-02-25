@@ -1,0 +1,3 @@
+name = delete_nodes 
+description = delete 500 nodes use Queue API  
+core = 7.x 

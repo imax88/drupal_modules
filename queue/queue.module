@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function queue_cron_queue_info() {
+  $queue['queue_queue'] = array(
+    						'worker callback' =>'queue_item_process',
+    						'time' 			  =>60,
+  						  );
+ return $queue;
+}
+
+
+/**
+ * Implements hook_cron().
+ */
+function queue_cron() {
+ 
+  // Load array of data , each element of array will progressing separately 
+  $items = queue_load_data();
+ 
+  if ($items) {
+    // creare new queue(черга)
+    $queue = drupal_queue_get('queue_queue');   
+    $queue->createQueue();
+ 
+    // set each element in to queue
+    foreach ($items as $item) {
+      $queue->createItem($item);
+    }
+  }
+}
+/**
+ *  function load 500 nods
+ */
+function queue_load_data() {
+  $data = array();
+  $is_record=db_query('SELECT COUNT(`nid`) FROM `node`');
+  $limit=500;
+  	if($is_record >= $limit){
+	  	$items = db_query('SELECT * FROM `node` LIMIT."$limit"');
+	
+	  while ($f= $items->fetchAssoc() ) {
+				$data[]= $f['nid'];
+  	   }
+  	 }  
+  	else{
+  		drupal_set_message('Load data dont work((');
+  	}   
+  return $data;
+}
+
+/**
+ *  function  delete 500 nods
+ */
+function queue_item_process($data) {
+
+	node_delete_multiple($data);
+
+}
